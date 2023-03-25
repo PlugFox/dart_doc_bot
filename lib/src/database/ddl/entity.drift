@@ -1,0 +1,127 @@
+/* Drop database schema:
+DROP TABLE IF EXISTS entity;
+DROP INDEX IF NOT EXISTS entity_library_idx;
+DROP INDEX IF EXISTS entity_parent_id_idx;
+DROP INDEX IF EXISTS entity_created_at_idx;
+DROP INDEX IF EXISTS entity_updated_at_idx;
+DROP TRIGGER IF EXISTS entity_updated_at_trg;
+
+DROP TABLE IF EXISTS prefix;
+DROP INDEX IF EXISTS prefix_token_idx;
+DROP INDEX IF EXISTS prefix_entity_id_idx;
+DROP INDEX IF EXISTS prefix_len_idx;
+
+DROP TABLE IF EXISTS trigram;
+DROP INDEX IF EXISTS trigram_entity_id_idx;
+DROP INDEX IF EXISTS trigram_token_idx;
+DROP INDEX IF EXISTS trigram_type_idx;
+DROP INDEX IF EXISTS trigram_count_idx;
+*/
+
+
+/* Create database schema */
+
+-- Entity table
+CREATE TABLE IF NOT EXISTS entity (
+    -- Unique identifier of the entity
+    -- path#name
+    id TEXT NOT NULL PRIMARY KEY,
+
+    -- Identifier of the library or package
+    library TEXT NOT NULL,
+
+    -- Identifier of the parent entity
+    parent_id TEXT,
+
+    -- Entity name
+    name TEXT NOT NULL,
+
+    -- Entity description
+    description TEXT,
+
+    -- Entity kind
+    kind TEXT NOT NULL,
+
+    -- Entity path
+    path TEXT NOT NULL,
+
+    -- Created date (unixtime in seconds)
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+
+    -- Updated date (unixtime in seconds)
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')) CHECK(updated_at >= created_at),
+
+    -- Foreign keys
+	CONSTRAINT fk_parent
+		FOREIGN KEY (parent_id)
+			REFERENCES entity(id)
+				ON UPDATE CASCADE
+				ON DELETE CASCADE
+) STRICT;
+CREATE INDEX IF NOT EXISTS entity_library_idx ON entity (library);
+CREATE INDEX IF NOT EXISTS entity_parent_id_idx ON entity (parent_id);
+CREATE INDEX IF NOT EXISTS entity_created_at_idx ON entity (created_at);
+CREATE INDEX IF NOT EXISTS entity_updated_at_idx ON entity (updated_at);
+CREATE TRIGGER IF NOT EXISTS entity_updated_at_trg AFTER UPDATE ON entity
+    BEGIN
+        UPDATE entity SET updated_at = strftime('%s', 'now') WHERE id = NEW.id;
+    END;
+
+
+/* SEARCH SECTION */
+
+-- Search table for name prefixes
+-- Search by name is more efficient
+-- and relevant than by full-text search by trigrams.
+CREATE TABLE IF NOT EXISTS prefix (
+    -- Prefix (first 3 chars of name, lowercased)
+    token TEXT NOT NULL CHECK(length(token) = 3),
+
+    -- Unique identifier of the entity
+    entity_id TEXT NOT NULL,
+
+    -- Name's length
+    len INTEGER NOT NULL,
+
+    -- Name (3 or more chars, lowercased)
+    name TEXT NOT NULL CHECK(length(name) >= 3),
+
+    -- Composite primary key
+    PRIMARY KEY (token, entity_id),
+
+    -- Foreign keys
+    FOREIGN KEY (entity_id)
+        REFERENCES entity (id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE
+) STRICT;
+CREATE INDEX IF NOT EXISTS prefix_token_idx ON prefix (token);
+CREATE INDEX IF NOT EXISTS prefix_entity_id_idx ON prefix (entity_id);
+CREATE INDEX IF NOT EXISTS prefix_len_idx ON prefix (len);
+
+
+-- Trigram table for the full-text search.
+-- Trigrams allow to search by name parts and
+-- to find with typo errors.
+CREATE TABLE IF NOT EXISTS trigram (
+    -- Trigram token
+    token TEXT NOT NULL CHECK(length(token) = 3),
+
+    -- Identifier of the entity
+    entity_id TEXT NOT NULL REFERENCES entity(id),
+
+    -- Count of trigrams in the entity name
+    count INTEGER NOT NULL,
+
+    -- Composite primary key
+    PRIMARY KEY (token, entity_id),
+
+    -- Foreign keys
+    FOREIGN KEY (entity_id)
+        REFERENCES entity (id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE
+) STRICT;
+CREATE INDEX IF NOT EXISTS trigram_token_idx ON trigram (token);
+CREATE INDEX IF NOT EXISTS trigram_entity_id_idx ON trigram (entity_id);
+CREATE INDEX IF NOT EXISTS trigram_count_idx ON trigram (count);

@@ -1,0 +1,20 @@
+-- Key-Value table
+CREATE TABLE IF NOT EXISTS kv (
+    -- req Key
+    k TEXT NOT NULL PRIMARY KEY,
+    -- req Value (e.g. JSON object)
+    v TEXT NOT NULL, -- CHECK(length(data) > 2 AND json_valid(data)),
+    -- req Created date (unixtime in seconds)
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    -- req Updated date (unixtime in seconds)
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')) CHECK(updated_at >= created_at)
+) STRICT;
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS kv_created_at_idx ON kv (created_at);
+CREATE INDEX IF NOT EXISTS kv_updated_at_idx ON kv (updated_at);
+
+CREATE TRIGGER IF NOT EXISTS kv_updated_at_trig AFTER UPDATE ON kv
+    BEGIN
+        UPDATE kv SET updated_at = strftime('%s', 'now') WHERE k = NEW.k;
+    END;
