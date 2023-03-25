@@ -7,7 +7,8 @@ import 'package:meta/meta.dart';
 
 import 'queries.dart';
 
-export 'package:drift/drift.dart';
+export 'package:drift/drift.dart' hide DatabaseOpener;
+export 'package:drift/isolate.dart';
 
 part 'database.g.dart';
 

@@ -8,6 +8,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:collection/collection.dart';
 import 'package:dart_doc_bot/src/database/database.dart';
+import 'package:dart_doc_bot/src/server/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:rxdart/rxdart.dart';
 
@@ -79,7 +80,7 @@ void main(List<String> args) => runZonedGuarded<void>(() async {
       );
       io.exit(0);
     }, (error, stackTrace) {
-      print('Error: $error\n$stackTrace');
+      warning('Error: $error\n$stackTrace');
       io.exit(1);
     });
 
