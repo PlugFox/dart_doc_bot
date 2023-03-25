@@ -24,20 +24,50 @@ void main(List<String> args) => runZonedGuarded<void>(() async {
         dropDatabase: true,
       );
       await db.customStatement('PRAGMA journal_mode = WAL;');
+      io.Platform.environment;
+      io.Platform.executableArguments;
       await _extract(
-        <String>[
+        <String?>[
           // Cloned package:
           //packageDir.absolute.path,
 
           // Dart SDK from brew:
-          '/opt/homebrew/opt/dart/libexec/lib',
+          //r'/opt/homebrew/opt/dart/libexec/lib',
+
+          // Dart SDK from choco:
+          //r'C:\tools\dart-sdk\lib',
 
           // Dart SDK from fvm:
-          //'/Users/mm/fvm/versions/stable/bin/cache/dart-sdk/lib',
+          //r'/Users/user/fvm/versions/stable/bin/cache/dart-sdk/lib',
+          //r'C:\Users\user\fvm\versions\stable\bin\cache\dart-sdk\lib',
 
           // Flutter SDK from fvm:
-          '/Users/mm/fvm/versions/stable/packages/flutter/lib',
-        ],
+          //r'/Users/user/fvm/versions/stable/packages/flutter/lib',
+          //r'C:\Users\user\fvm\versions\stable\packages\flutter\lib',
+
+          // Dart from environment:
+          p.joinAll([
+            io.Platform.environment['FLUTTER_HOME'] ?? '',
+            'bin',
+            'cache',
+            'dart-sdk',
+            'lib',
+          ]),
+
+          // Flutter from environment:
+          p.joinAll([
+            io.Platform.environment['FLUTTER_HOME'] ?? '',
+            'packages',
+            'flutter',
+            'lib',
+          ]),
+        ]
+            .whereType<String>()
+            .map<String>(p.normalize)
+            .map<io.Directory>(io.Directory.new)
+            .where((dir) => dir.existsSync())
+            .map<String>((dir) => dir.absolute.path)
+            .toList(),
       ).bufferCount(500).asyncMap<void>((chunk) => _write(db, chunk)).drain();
       await db.customStatement('VACUUM;');
       // Add stat info:
