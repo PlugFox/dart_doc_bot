@@ -10,7 +10,7 @@ import 'package:path/path.dart' as p;
 
 @pragma('vm:entry-point')
 void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
-      final cpuCount = math.max(io.Platform.numberOfProcessors ~/ 2, 1);
+      final cpuCount = math.max(io.Platform.numberOfProcessors ~/ 2, 2);
       final tempDir = io.Directory('.temp').absolute;
       final db = Database.lazy(
         file: io.File(p.join(tempDir.absolute.path, 'db.sqlite')),

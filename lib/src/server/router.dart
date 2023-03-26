@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:collection/collection.dart';
 import 'package:dart_doc_bot/src/database/database.dart';
 import 'package:dart_doc_bot/src/search/search_service.dart';
 import 'package:multiline/multiline.dart';
@@ -9,19 +11,20 @@ import 'package:shelf_router/shelf_router.dart';
 
 import 'middleware/errors.dart';
 
-final Handler $router = Router(notFoundHandler: notFound)
-  ..get('/stat', stat)
-  ..get('/search', search)
-  ..get('/health', healthCheck);
+final Handler $router = Router(notFoundHandler: $notFound)
+  ..get('/stat', $stat)
+  ..get('/search', $search)
+  ..get('/health', $healthCheck)
+  ..post('/telegram', $telegram);
 
-Response healthCheck(Request request) => Response.ok(
+Response $healthCheck(Request request) => Response.ok(
       '{"data": {"status": "ok"}}',
       headers: <String, String>{
         'Content-Type': io.ContentType.json.value,
       },
     );
 
-Future<Response> stat(Request request) async {
+Future<Response> $stat(Request request) async {
   final result = await request.database
       .customSelect('''
       |SELECT 'database' AS k, 'ok' AS v
@@ -51,7 +54,7 @@ Future<Response> stat(Request request) async {
   );
 }
 
-Future<Response> search(Request request) async {
+Future<Response> $search(Request request) async {
   final query = request.url.queryParameters['q'];
   if (query == null || query.isEmpty) {
     throw BadRequestException(
@@ -76,7 +79,85 @@ Future<Response> search(Request request) async {
   );
 }
 
-Future<Response> notFound(Request request) async => Response.notFound(
+FutureOr<Response> $telegram(Request request) async {
+  if (request.headers['content-type']?.contains('application/json') != true) {
+    throw BadRequestException(
+      detail: 'Invalid content-type',
+      data: <String, Object?>{
+        'path': request.url.path,
+        'method': request.method,
+        'headers': request.headers,
+      },
+    );
+  } else if (request.isEmpty) {
+    throw BadRequestException(
+      detail: 'Empty request body',
+      data: <String, Object?>{
+        'path': request.url.path,
+        'method': request.method,
+        'headers': request.headers,
+      },
+    );
+  }
+  final body = await request.readAsString();
+  final Map<String, Object?> data;
+  try {
+    data = jsonDecode(body);
+  } on Object {
+    throw BadRequestException(
+      detail: 'Invalid JSON',
+      data: <String, Object?>{
+        'path': request.url.path,
+        'method': request.method,
+        'headers': request.headers,
+        'body': body,
+      },
+    );
+  }
+
+  @pragma('vm:prefer-inline')
+  FutureOr<Map<String, Object?>?> inlineQuery(Map<String, Object?> data) async {
+    final query = data['query']?.toString().trim();
+    if (query == null || query.length < 3) return null;
+    final results = await request.searchService.search(query, limit: 50);
+    if (results.isEmpty) return null;
+    return <String, Object?>{
+      'inline_query_id': data['id'],
+      'results': results.mapIndexed<Map<String, Object?>>(_mapSearchResult2InlineQueryResponse).toList(),
+    };
+  }
+
+  final Map<String, FutureOr<Map<String, Object?>?> Function(Map<String, Object?> data)> actions =
+      <String, FutureOr<Map<String, Object?>?> Function(Map<String, Object?> data)>{
+    //'message': doNothing,
+    //'edited_message': doNothing,
+    'inline_query': inlineQuery,
+    //'chosen_inline_result': doNothing,
+    //'callback_query': doNothing,
+  };
+
+  for (final action in actions.entries) {
+    final updated = data[action.key];
+    if (updated is! Map<String, Object?>) continue;
+    final response = await action.value(updated);
+    if (response == null) break;
+    return Response.ok(
+      jsonEncode(response),
+      headers: <String, String>{
+        'Content-Type': io.ContentType.json.value,
+      },
+    );
+  }
+
+  return Response.ok(
+    '{"data": {"status": "ok"}}',
+    headers: <String, String>{
+      'Content-Type': io.ContentType.json.value,
+    },
+  );
+}
+
+Response $notFound(Request request) => Response.notFound(
       jsonEncode(<String, Object?>{
         'error': <String, Object?>{
           'status': io.HttpStatus.notFound,
@@ -93,6 +174,54 @@ Future<Response> notFound(Request request) async => Response.notFound(
       },
     );
 
+Map<String, Object?> _mapSearchResult2InlineQueryResponse(int index, Map<String, Object?> data) {
+  final id = index + 1;
+  final title = data['name'];
+  final subtitle = '${data['kind']} in ${data['library']}';
+  return <String, Object?>{
+    'type': 'article',
+    'id': id,
+    'title': title,
+    'description': subtitle,
+    'input_message_content': <String, Object?>{
+      'message_text': '${data['name']}\n${data['description']}',
+      'parse_mode': 'MarkdownV2',
+      'disable_web_page_preview': false,
+      // https://core.telegram.org/bots/api#messageentity
+      //'entities': <Map<String, Object?>>[],
+    },
+    'reply_markup': <String, Object?>{
+      'inline_keyboard': <List<Map<String, Object?>>>[
+        <Map<String, Object?>>[
+          <String, Object?>{
+            'text': 'Stable Flutter',
+            'url': 'https://api.flutter.dev/flutter/search.html?' 'q=$title',
+          },
+          <String, Object?>{
+            'text': 'Master Flutter',
+            'url': 'https://master-api.flutter.dev/flutter/search.html?'
+                'q=$title',
+          },
+        ],
+        <Map<String, Object?>>[
+          /* Add "Ask Chat GPT" button */
+          <String, Object?>{
+            'text': 'Google',
+            'url': 'https://www.google.com/search?'
+                'q=site%3Aapi.flutter.dev+$title',
+          },
+          <String, Object?>{
+            'text': 'Bing',
+            'url': 'https://www.bing.com/search?'
+                'q=Flutter+$title',
+          },
+        ],
+      ],
+    },
+  };
+}
+
+/// Extension on [Request] to provide access to the database and search service.
 extension on Request {
   /// Returns the database instance from the request context.
   Database get database => context['db'] as Database;
