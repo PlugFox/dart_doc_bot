@@ -213,7 +213,6 @@ Map<String, Object?> _mapSearchResult2InlineQueryResponse(int index, Map<String,
   if (description != null) {
     _$buffer
       ..writeln()
-      ..writeln()
       ..writeln('<pre>\n${_escape(description.toString())}\n</pre>');
   }
   return <String, Object?>{
