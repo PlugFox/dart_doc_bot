@@ -10,7 +10,7 @@ import 'package:rxdart/rxdart.dart';
 
 @pragma('vm:entry-point')
 void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
-      final cpuCount = math.max(io.Platform.numberOfProcessors ~/ 2, 2);
+      final cpuCount = math.max(io.Platform.numberOfProcessors, 2);
       final dbFile = await io.Directory.current
           .list(recursive: true)
           .whereType<io.File>()

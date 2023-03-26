@@ -72,11 +72,24 @@ Future<Response> $search(Request request) async {
       },
     );
   }
-  final result = await request.searchService.search(query);
+  final stopwatch = Stopwatch()..start();
+  final List<Map<String, Object?>> result;
+  try {
+    result = await request.searchService.search(query);
+    fine('Search query: "$query" in ${stopwatch.elapsedMilliseconds} ms');
+  } on Object {
+    rethrow;
+  } finally {
+    stopwatch.stop();
+  }
   return Response.ok(
     jsonEncode(
       <String, Object?>{
         'data': result,
+        'meta': <String, Object?>{
+          'query': query,
+          'took': stopwatch.elapsedMilliseconds,
+        },
       },
     ),
     headers: <String, String>{
