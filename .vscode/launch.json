@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "server (dev)",
+      "program": "bin/server.dart",
+      "request": "launch",
+      "type": "dart",
+      "env": {
+        "ENVIRONMENT": "develop"
+      },
+      "args": [
+        //  "--enable-experiment=sealed-class,records,patterns,class-modifiers,"
+        "--dart-define=ENVIRONMENT=develop"
+      ]
+    }
+  ]
+}

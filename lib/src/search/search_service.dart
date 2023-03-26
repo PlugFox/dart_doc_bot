@@ -9,13 +9,12 @@ class SearchService {
 
   /// Sanitize query and split it into words.
   /// Maximum length of query is 60 characters.
-  List<String> sanitize(String query) =>
-      (query.length > 60 ? '${query.substring(0, 60)}' : query)
-          .trim()
-          .toLowerCase()
-          .split(_$exp)
-          .where((e) => e.length > 2)
-          .toList();
+  List<String> sanitize(String query) => (query.length > 60 ? '${query.substring(0, 60)}' : query)
+      .trim()
+      .toLowerCase()
+      .split(_$exp)
+      .where((e) => e.length > 2)
+      .toList();
 
   /// Search by beginning of name.
   /// [words] - should be at least 3 characters long,
@@ -23,10 +22,7 @@ class SearchService {
   ///
   /// Returns list of entity ids.
   Future<List<String>> searchByName(List<String> words, {int limit = 25}) =>
-      _database
-          .customSelect(_$getSearchRequest$Words(words, limit))
-          .get()
-          .then<List<String>>(
+      _database.customSelect(_$getSearchRequest$Words(words, limit)).get().then<List<String>>(
             (r) => r.map<String>((e) => e.data['id']! as String).toList(),
           );
 
@@ -36,10 +32,7 @@ class SearchService {
   ///
   /// Returns list of entity ids.
   Future<List<String>> searchByTrigrams(List<String> words, {int limit = 25}) =>
-      _database
-          .customSelect(_$getSearchRequest$Trigrams(words, limit))
-          .get()
-          .then<List<String>>(
+      _database.customSelect(_$getSearchRequest$Trigrams(words, limit)).get().then<List<String>>(
             (r) => r.map<String>((e) => e.data['id']! as String).toList(),
           );
 
@@ -47,12 +40,10 @@ class SearchService {
   /// [query] - should be at least 3 characters long
   /// and contain only letters and numbers.
   /// [limit] - maximum number of results.
-  Future<List<Map<String, Object?>>> search(String query, {int limit = 25}) =>
-      _database
-          .customSelect(_$getSearchRequest$All(sanitize(query), limit))
-          .get()
-          .then<List<Map<String, Object?>>>(
-              (data) => data.map<Map<String, Object?>>((e) => e.data).toList());
+  Future<List<Map<String, Object?>>> search(String query, {int limit = 25}) => _database
+      .customSelect(_$getSearchRequest$All(sanitize(query), limit))
+      .get()
+      .then<List<Map<String, Object?>>>((data) => data.map<Map<String, Object?>>((e) => e.data).toList());
 }
 
 /// Get trigram tokens from words.
@@ -91,8 +82,7 @@ LIMIT $limit
 ''';
 
 /// Get request for searching by trigrams.
-String _$getSearchRequest$Trigrams(Iterable<String> words, [int limit = 25]) =>
-    '''
+String _$getSearchRequest$Trigrams(Iterable<String> words, [int limit = 25]) => '''
 SELECT
   entity_id  AS id,
   SUM(count) AS relevance

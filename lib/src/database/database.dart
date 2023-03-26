@@ -7,7 +7,8 @@ import 'package:meta/meta.dart';
 
 import 'queries.dart';
 
-export 'package:drift/drift.dart';
+export 'package:drift/drift.dart' hide DatabaseOpener;
+export 'package:drift/isolate.dart';
 
 part 'database.g.dart';
 
@@ -43,11 +44,7 @@ abstract class IKeyValueStorage {
 )
 class Database extends _$Database
     with DatabaseKeyValueMixin
-    implements
-        GeneratedDatabase,
-        DatabaseConnectionUser,
-        QueryExecutorUser,
-        IKeyValueStorage {
+    implements GeneratedDatabase, DatabaseConnectionUser, QueryExecutorUser, IKeyValueStorage {
   /// Creates a database that will store its result in the [path], creating it
   /// if it doesn't exist.
   ///
@@ -146,6 +143,7 @@ class DatabaseMigrationStrategy implements MigrationStrategy {
   /// Executes when the database is opened for the first time.
   @override
   OnCreate get onCreate => (m) async {
+        //await _db.customStatement('PRAGMA writable_schema=ON;');
         await m.createAll();
       };
 
@@ -154,7 +152,7 @@ class DatabaseMigrationStrategy implements MigrationStrategy {
   /// Schema version upgrades and downgrades will both be run here.
   @override
   OnUpgrade get onUpgrade => (m, from, to) async {
-        await m.createAll();
+        //await _db.customStatement('PRAGMA writable_schema=ON;');
         return _update(_db, m, from, to);
       };
 
@@ -194,9 +192,7 @@ mixin DatabaseKeyValueMixin on _$Database implements IKeyValueStorage {
   void addKey(String key, String value) {
     assert(_$isInitialized, 'Database is not initialized');
     _$store[key] = value;
-    into(kv)
-        .insertOnConflictUpdate(KvCompanion.insert(k: key, v: value))
-        .ignore();
+    into(kv).insertOnConflictUpdate(KvCompanion.insert(k: key, v: value)).ignore();
   }
 
   @override
@@ -227,9 +223,7 @@ mixin DatabaseKeyValueMixin on _$Database implements IKeyValueStorage {
     batch(
       (b) => b.insertAllOnConflictUpdate(
         kv,
-        [
-          for (final e in data.entries) KvCompanion.insert(k: e.key, v: e.value)
-        ],
+        [for (final e in data.entries) KvCompanion.insert(k: e.key, v: e.value)],
       ),
     ).ignore();
   }
