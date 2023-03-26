@@ -125,7 +125,7 @@ FutureOr<Response> $telegram(Request request) async {
   FutureOr<Map<String, Object?>?> inlineQuery(Map<String, Object?> data) async {
     final query = data['query']?.toString().trim();
     if (query == null || query.length < 3) return null;
-    final results = await request.searchService.search(query, limit: 50);
+    final results = await request.searchService.search(query, limit: 25);
     if (results.isEmpty) return null;
     return <String, Object?>{
       'inline_query_id': data['id'],
