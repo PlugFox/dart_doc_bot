@@ -5,11 +5,17 @@ import 'dart:io' as io;
 import 'package:collection/collection.dart';
 import 'package:dart_doc_bot/src/database/database.dart';
 import 'package:dart_doc_bot/src/search/search_service.dart';
+import 'package:dart_doc_bot/src/server/logger.dart';
+import 'package:http/http.dart' as http;
 import 'package:multiline/multiline.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
 import 'middleware/errors.dart';
+
+final http.Client _$httpClient = http.Client();
+const String _$apiUrl = 'https://api.telegram.org/bot';
+final String _$botToken = io.Platform.environment['TG_BOT_TOKEN'] ?? (throw Exception('No bot token provided'));
 
 final Handler $router = Router(notFoundHandler: $notFound)
   ..get('/stat', $stat)
@@ -123,6 +129,7 @@ FutureOr<Response> $telegram(Request request) async {
     if (results.isEmpty) return null;
     return <String, Object?>{
       'inline_query_id': data['id'],
+      'cache_time': 3600,
       'results': results.mapIndexed<Map<String, Object?>>(_mapSearchResult2InlineQueryResponse).toList(),
     };
   }
@@ -140,13 +147,16 @@ FutureOr<Response> $telegram(Request request) async {
     final updated = data[action.key];
     if (updated is! Map<String, Object?>) continue;
     final response = await action.value(updated);
-    if (response == null) break;
-    return Response.ok(
-      jsonEncode(response),
-      headers: <String, String>{
-        'Content-Type': io.ContentType.json.value,
-      },
-    );
+    if (response == null) continue;
+    try {
+      await _$httpClient.post(
+        Uri.parse('${_$apiUrl}${_$botToken}/answerInlineQuery'),
+        headers: <String, String>{'Content-Type': io.ContentType.json.value},
+        body: jsonEncode(response),
+      );
+    } on Object catch (error, stackTrace) {
+      warning(error, stackTrace, 'Failed to send response to Telegram: $error');
+    }
   }
 
   return Response.ok(
