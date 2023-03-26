@@ -23,7 +23,6 @@ dependencies:
   shelf_proxy: ^1.0.2
   shelf_static: ^1.1.1
   intl: ^0.18.0
-  # sqlite3_flutter_libs: ^0.5.13
 
 dev_dependencies:
   build_runner: ^2.3.3

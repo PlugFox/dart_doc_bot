@@ -143,6 +143,7 @@ class DatabaseMigrationStrategy implements MigrationStrategy {
   /// Executes when the database is opened for the first time.
   @override
   OnCreate get onCreate => (m) async {
+        //await _db.customStatement('PRAGMA writable_schema=ON;');
         await m.createAll();
       };
 
@@ -151,7 +152,7 @@ class DatabaseMigrationStrategy implements MigrationStrategy {
   /// Schema version upgrades and downgrades will both be run here.
   @override
   OnUpgrade get onUpgrade => (m, from, to) async {
-        await m.createAll();
+        //await _db.customStatement('PRAGMA writable_schema=ON;');
         return _update(_db, m, from, to);
       };
 

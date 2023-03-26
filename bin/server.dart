@@ -6,21 +6,25 @@ import 'dart:math' as math;
 import 'package:dart_doc_bot/src/database/database.dart';
 import 'package:dart_doc_bot/src/server/logger.dart';
 import 'package:dart_doc_bot/src/server/shared_server.dart';
-import 'package:path/path.dart' as p;
+import 'package:rxdart/rxdart.dart';
 
 @pragma('vm:entry-point')
 void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
       final cpuCount = math.max(io.Platform.numberOfProcessors ~/ 2, 2);
-      final tempDir = io.Directory('.temp').absolute;
+      final dbFile = await io.Directory.current
+          .list(recursive: true)
+          .whereType<io.File>()
+          .where((e) => e.path.endsWith('.sqlite'))
+          .first;
       final db = Database.lazy(
-        file: io.File(p.join(tempDir.absolute.path, 'db.sqlite')),
+        file: io.File(dbFile.absolute.path),
       );
       for (var i = 1; i <= cpuCount; i++) {
         final receivePort = ReceivePort();
         // ignore: unused_local_variable
         SendPort? sendPort;
         final server = SharedServer(
-          httpAddress: io.InternetAddress.loopbackIPv4, // io.InternetAddress.anyIPv4,
+          httpAddress: io.InternetAddress.anyIPv4, // io.InternetAddress.loopbackIPv4
           httpPort: 8080,
           sendPort: receivePort.sendPort,
           label: 'Server#$i',
@@ -35,8 +39,6 @@ void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
         );
       }
     }, (error, stackTrace) {
-      //Error.safeToString(error);
-      //stackTrace.toString();
-      severe('Error: error, stackTrace: stackTrace');
+      severe('Error: $error\n\n$stackTrace');
       io.exit(2);
     });

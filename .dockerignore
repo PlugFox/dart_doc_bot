@@ -1,4 +1,6 @@
 .dart_tool/
 .temp/
 .vscode/
-**/*.g.dart
+tool/
+Dockerfile
+Makefile
