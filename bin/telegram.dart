@@ -4,8 +4,7 @@ import 'dart:io' as io;
 import 'package:http/http.dart' as http;
 
 const String apiUrl = 'https://api.telegram.org/bot';
-final String botToken = io.Platform.environment['TG_BOT_TOKEN'] ??
-    (throw Exception('No bot token provided'));
+final String botToken = io.Platform.environment['TG_BOT_TOKEN'] ?? (throw Exception('No bot token provided'));
 
 void main() async {
   int lastUpdateId = 0;
@@ -28,8 +27,7 @@ void main() async {
 }
 
 Future<List<Map<String, Object?>>> getUpdates(int offset) async {
-  final response = await http
-      .get(Uri.parse('${apiUrl}${botToken}/getUpdates?offset=$offset'));
+  final response = await http.get(Uri.parse('${apiUrl}${botToken}/getUpdates?offset=$offset'));
   const $empty = <Map<String, Object?>>[];
   if (response.statusCode != 200) return $empty;
   var jsonResponse = jsonDecode(response.body);
@@ -63,8 +61,7 @@ Future<void> handleInlineQuery(Map<String, Object?> inlineQuery) async {
           <Map<String, Object?>>[
             <String, Object?>{
               'text': 'Stable Flutter',
-              'url':
-                  'https://api.flutter.dev/flutter/search.html?' 'q=$queryText',
+              'url': 'https://api.flutter.dev/flutter/search.html?' 'q=$queryText',
             },
             <String, Object?>{
               'text': 'Master Flutter',

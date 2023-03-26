@@ -111,21 +111,18 @@ Future<void> _cloneTo(io.Directory packageDir, String url) async {
 }
 */
 
-Stream<Insertable> _extract(List<String> includedPaths) =>
-    Stream<AnalysisContextCollection>.value(
+Stream<Insertable> _extract(List<String> includedPaths) => Stream<AnalysisContextCollection>.value(
       AnalysisContextCollection(
         includedPaths: includedPaths,
       ),
     )
         .expand<AnalysisContext>((collection) => collection.contexts)
-        .asyncExpand<SomeResolvedLibraryResult>((context) =>
-            Stream<String>.fromIterable(context.contextRoot
-                    .analyzedFiles()
-                    .map<String>((e) => e.trim())
-                    .where((e) => e.endsWith('.dart'))
-                    .where((e) => !e.endsWith('_test.dart')))
-                .asyncMap<SomeResolvedLibraryResult>(
-                    (path) => context.currentSession.getResolvedLibrary(path)))
+        .asyncExpand<SomeResolvedLibraryResult>((context) => Stream<String>.fromIterable(context.contextRoot
+                .analyzedFiles()
+                .map<String>((e) => e.trim())
+                .where((e) => e.endsWith('.dart'))
+                .where((e) => !e.endsWith('_test.dart')))
+            .asyncMap<SomeResolvedLibraryResult>((path) => context.currentSession.getResolvedLibrary(path)))
         .where((result) => result is! NotLibraryButPartResult)
         .where((result) => result is ResolvedLibraryResult)
         .cast<ResolvedLibraryResult>()
@@ -133,11 +130,9 @@ Stream<Insertable> _extract(List<String> includedPaths) =>
         .where((lib) => lib.name.isNotEmpty)
         .expand<Insertable>(_processLibrary);
 
-Iterable<Insertable> _processLibrary(LibraryElement library) =>
-    library.source.fullName.isEmpty
-        ? <Insertable>[]
-        : library.exportNamespace.definedNames.values
-            .expand<Insertable>((element) => _processElement(library, element));
+Iterable<Insertable> _processLibrary(LibraryElement library) => library.source.fullName.isEmpty
+    ? <Insertable>[]
+    : library.exportNamespace.definedNames.values.expand<Insertable>((element) => _processElement(library, element));
 
 Iterable<Insertable> _processElement(
   LibraryElement library,
@@ -147,11 +142,7 @@ Iterable<Insertable> _processElement(
   final name = element.name?.trim();
   var path = element.source?.fullName.trim();
   final libPath = library.source.fullName.trim();
-  if (path == null ||
-      name == null ||
-      name.isEmpty ||
-      Identifier.isPrivateName(name) ||
-      element.isPrivate) return;
+  if (path == null || name == null || name.isEmpty || Identifier.isPrivateName(name) || element.isPrivate) return;
   final dirName = p.dirname(libPath);
   if (!p.isWithin(dirName, path)) return;
   path = p.relative(path, from: dirName);
@@ -174,10 +165,8 @@ Iterable<Insertable> _processElement(
   //final isInterface = element is InterfaceElement;
   // Tokenize name
   final lowerName = name.toLowerCase();
-  final tokens = _tokenize(lowerName)
-      .groupFoldBy<String, int>((e) => e, (p, n) => (p ?? 0) + 1)
-      .entries
-      .toList(growable: false);
+  final tokens =
+      _tokenize(lowerName).groupFoldBy<String, int>((e) => e, (p, n) => (p ?? 0) + 1).entries.toList(growable: false);
   if (tokens.isNotEmpty) {
     yield PrefixCompanion.insert(
       token: tokens.first.key,
@@ -194,14 +183,11 @@ Iterable<Insertable> _processElement(
     );
   }
 
-  yield* element.children
-      .expand<Insertable>((element) => _processElement(library, element, id));
+  yield* element.children.expand<Insertable>((element) => _processElement(library, element, id));
 }
 
 String _generateId(String path, String name, String? parentId) =>
-    parentId == null
-        ? '${path.hashCode.toRadixString(36)}/$name'
-        : '$parentId/$name';
+    parentId == null ? '${path.hashCode.toRadixString(36)}/$name' : '$parentId/$name';
 
 final RegExp _$exp = RegExp(r'[^a-zA-Z0-9a-яА-ЯёЁ]+');
 Iterable<String> _tokenize(String? text) {
@@ -214,8 +200,7 @@ Iterable<String> _tokenize(String? text) {
   });
 }
 
-Future<void> _write(Database db, List<Insertable> companions) =>
-    db.batch((batch) {
+Future<void> _write(Database db, List<Insertable> companions) => db.batch((batch) {
       final entities = companions
           .whereType<EntityCompanion>()
           .groupFoldBy<String, EntityCompanion>((e) => e.id.value, (_, n) => n)
@@ -224,22 +209,17 @@ Future<void> _write(Database db, List<Insertable> companions) =>
       final trigrams = companions
           .whereType<TrigramCompanion>()
           .groupFoldBy<String, TrigramCompanion>(
-              (e) => '${e.entityId.value}/${e.token}',
-              (p, n) => p == null || p.count.value <= n.count.value ? n : p)
+              (e) => '${e.entityId.value}/${e.token}', (p, n) => p == null || p.count.value <= n.count.value ? n : p)
           .values
           .toList();
       final prefixes = companions
           .whereType<PrefixCompanion>()
-          .groupFoldBy<String, PrefixCompanion>(
-              (e) => e.entityId.value, (_, n) => n)
+          .groupFoldBy<String, PrefixCompanion>((e) => e.entityId.value, (_, n) => n)
           .values
           .toList();
-      if (entities.isNotEmpty)
-        batch.insertAll(db.entity, entities, mode: InsertMode.insertOrIgnore);
-      if (trigrams.isNotEmpty)
-        batch.insertAll(db.trigram, trigrams, mode: InsertMode.insertOrIgnore);
-      if (prefixes.isNotEmpty)
-        batch.insertAll(db.prefix, prefixes, mode: InsertMode.insertOrIgnore);
+      if (entities.isNotEmpty) batch.insertAll(db.entity, entities, mode: InsertMode.insertOrIgnore);
+      if (trigrams.isNotEmpty) batch.insertAll(db.trigram, trigrams, mode: InsertMode.insertOrIgnore);
+      if (prefixes.isNotEmpty) batch.insertAll(db.prefix, prefixes, mode: InsertMode.insertOrIgnore);
     });
 
 final _$buffer = StringBuffer();
@@ -254,10 +234,7 @@ String? _formatDescription(String? description) {
     if (line.contains('{@')) continue;
     if (line.startsWith('///')) {
       line = line.substring(3);
-    } else if (line.startsWith('/*') ||
-        line.startsWith(' *') ||
-        line.startsWith('*/') ||
-        line.startsWith('//')) {
+    } else if (line.startsWith('/*') || line.startsWith(' *') || line.startsWith('*/') || line.startsWith('//')) {
       line = line.substring(2);
     } else if (line.startsWith('*')) {
       line = line.substring(1);
@@ -280,9 +257,7 @@ String? _formatDescription(String? description) {
   return string.isEmpty ? null : string;
 }
 
-Future<void> _addStats(Database db,
-        [Map<String, int> custom = const <String, int>{}]) =>
-    db.customStatement('''
+Future<void> _addStats(Database db, [Map<String, int> custom = const <String, int>{}]) => db.customStatement('''
 INSERT OR REPLACE INTO kv (k, v)
 SELECT
 	k, v

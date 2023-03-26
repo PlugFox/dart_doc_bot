@@ -41,8 +41,7 @@ Future<Response> stat(Request request) async {
       <String, Object?>{
         'data': <String, Object?>{
           for (final stat in result)
-            if (stat.data.containsKey('k'))
-              stat.data['k'].toString(): stat.data['v'],
+            if (stat.data.containsKey('k')) stat.data['k'].toString(): stat.data['v'],
         },
       },
     ),
