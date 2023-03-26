@@ -20,8 +20,7 @@ void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
         // ignore: unused_local_variable
         SendPort? sendPort;
         final server = SharedServer(
-          httpAddress:
-              io.InternetAddress.anyIPv4, //io.InternetAddress.loopbackIPv4,
+          httpAddress: io.InternetAddress.loopbackIPv4, // io.InternetAddress.anyIPv4,
           httpPort: 8080,
           sendPort: receivePort.sendPort,
           label: 'Server#$i',

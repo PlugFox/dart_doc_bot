@@ -31,15 +31,9 @@ void _output(List<Map<String, Object?>> results) {
     name = result['name']! as String;
     kind = result['kind']! as String;
     library = result['library']! as String;
-    name = name.length > 40
-        ? '${name.substring(0, 40 - 3)}...'
-        : name.padRight(40);
-    kind = kind.length > 12
-        ? '${kind.substring(0, 12 - 3)}...'
-        : kind.padRight(12);
-    library = library.length > 24
-        ? '${library.substring(0, 24 - 3)}...'
-        : library.padRight(24);
+    name = name.length > 40 ? '${name.substring(0, 40 - 3)}...' : name.padRight(40);
+    kind = kind.length > 12 ? '${kind.substring(0, 12 - 3)}...' : kind.padRight(12);
+    library = library.length > 24 ? '${library.substring(0, 24 - 3)}...' : library.padRight(24);
     buffer.writeln('$name | $kind | $library');
   }
   config(buffer.toString());

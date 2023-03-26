@@ -44,11 +44,7 @@ abstract class IKeyValueStorage {
 )
 class Database extends _$Database
     with DatabaseKeyValueMixin
-    implements
-        GeneratedDatabase,
-        DatabaseConnectionUser,
-        QueryExecutorUser,
-        IKeyValueStorage {
+    implements GeneratedDatabase, DatabaseConnectionUser, QueryExecutorUser, IKeyValueStorage {
   /// Creates a database that will store its result in the [path], creating it
   /// if it doesn't exist.
   ///
@@ -195,9 +191,7 @@ mixin DatabaseKeyValueMixin on _$Database implements IKeyValueStorage {
   void addKey(String key, String value) {
     assert(_$isInitialized, 'Database is not initialized');
     _$store[key] = value;
-    into(kv)
-        .insertOnConflictUpdate(KvCompanion.insert(k: key, v: value))
-        .ignore();
+    into(kv).insertOnConflictUpdate(KvCompanion.insert(k: key, v: value)).ignore();
   }
 
   @override
@@ -228,9 +222,7 @@ mixin DatabaseKeyValueMixin on _$Database implements IKeyValueStorage {
     batch(
       (b) => b.insertAllOnConflictUpdate(
         kv,
-        [
-          for (final e in data.entries) KvCompanion.insert(k: e.key, v: e.value)
-        ],
+        [for (final e in data.entries) KvCompanion.insert(k: e.key, v: e.value)],
       ),
     ).ignore();
   }
