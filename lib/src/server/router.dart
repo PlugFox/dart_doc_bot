@@ -174,19 +174,36 @@ Response $notFound(Request request) => Response.notFound(
       },
     );
 
+/// Escape all HTML special characters `<` & `>` in [text].
+String _escape(String text) => text.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+
+final _$buffer = StringBuffer();
 Map<String, Object?> _mapSearchResult2InlineQueryResponse(int index, Map<String, Object?> data) {
   final id = index + 1;
   final title = data['name'];
   final subtitle = '${data['kind']} in ${data['library']}';
+  _$buffer
+    ..clear()
+    ..write('<b>${data['name']}</b>')
+    ..write(' (<i>${data['kind']} in ${data['library']}</i>)');
+  final description = data['description'];
+  if (description != null) {
+    _$buffer
+      ..writeln()
+      ..writeln()
+      ..writeln('<pre>\n${_escape(description.toString())}\n</pre>');
+  }
   return <String, Object?>{
     'type': 'article',
     'id': id,
     'title': title,
     'description': subtitle,
     'input_message_content': <String, Object?>{
-      'message_text': '${data['name']}\n${data['description']}',
-      'parse_mode': 'MarkdownV2',
-      'disable_web_page_preview': false,
+      'message_text': _$buffer.toString(),
+      // Telegram does not escape some markdown characters with MarkdownV2
+      // https://stackoverflow.com/questions/40626896/telegram-does-not-escape-some-markdown-characters
+      'parse_mode': 'HTML', // HTML, Markdown, MarkdownV2
+      'disable_web_page_preview': true,
       // https://core.telegram.org/bots/api#messageentity
       //'entities': <Map<String, Object?>>[],
     },
@@ -194,11 +211,11 @@ Map<String, Object?> _mapSearchResult2InlineQueryResponse(int index, Map<String,
       'inline_keyboard': <List<Map<String, Object?>>>[
         <Map<String, Object?>>[
           <String, Object?>{
-            'text': 'Stable Flutter',
+            'text': 'Stable API',
             'url': 'https://api.flutter.dev/flutter/search.html?' 'q=$title',
           },
           <String, Object?>{
-            'text': 'Master Flutter',
+            'text': 'Master API',
             'url': 'https://master-api.flutter.dev/flutter/search.html?'
                 'q=$title',
           },
