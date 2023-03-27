@@ -40,10 +40,14 @@ class SearchService {
   /// [query] - should be at least 3 characters long
   /// and contain only letters and numbers.
   /// [limit] - maximum number of results.
-  Future<List<Map<String, Object?>>> search(String query, {int limit = 25}) => _database
-      .customSelect(_$getSearchRequest$All(sanitize(query), limit))
-      .get()
-      .then<List<Map<String, Object?>>>((data) => data.map<Map<String, Object?>>((e) => e.data).toList());
+  Future<List<Map<String, Object?>>> search(String query, {int limit = 25}) {
+    final words = sanitize(query);
+    if (words.isEmpty) return Future<List<Map<String, Object?>>>.value(<Map<String, Object?>>[]);
+    return _database
+        .customSelect(_$getSearchRequest$All(words, limit))
+        .get()
+        .then<List<Map<String, Object?>>>((data) => data.map<Map<String, Object?>>((e) => e.data).toList());
+  }
 }
 
 /// Get trigram tokens from words.

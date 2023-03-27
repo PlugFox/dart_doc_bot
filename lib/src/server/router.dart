@@ -72,10 +72,21 @@ Future<Response> $search(Request request) async {
       },
     );
   }
+  if (query.length < 3) {
+    throw BadRequestException(
+      detail: 'Query parameter "q" must be at least 3 characters long',
+      data: <String, Object?>{
+        'path': request.url.path,
+        'method': request.method,
+        'headers': request.headers,
+        'query': query,
+      },
+    );
+  }
   final stopwatch = Stopwatch()..start();
   final List<Map<String, Object?>> result;
   try {
-    result = await request.searchService.search(query);
+    result = await request.searchService.search(query, limit: 25);
     fine('Search query: "$query" in ${stopwatch.elapsedMilliseconds} ms');
   } on Object {
     rethrow;

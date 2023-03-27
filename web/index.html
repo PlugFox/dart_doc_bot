@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Search by Flutter & Dart API</title>
+        <style>
+            .search-container {
+                display: flex;
+                align-items: center;
+            }
+            .search-container input {
+                margin-right: 8px;
+            }
+            .search-container span {
+                margin-right: 8px;
+                margin-left: 8px;
+                font-style: italic;
+            }
+            #input-field {
+                max-width: 400px;
+                padding: 12px 20px;
+                margin: 8px 0;
+                box-sizing: border-box;
+                border: 1px solid #ccc;
+                -webkit-transition: 0.5s;
+                transition: 0.5s;
+                outline: none;
+            }
+            .list-container {
+                display: flex;
+                flex-direction: column;
+                max-height: 800px; /* Adjust the max height as needed */
+                overflow-y: auto;
+            }
+            .list-item {
+                margin-bottom: .5rem;
+                position: relative;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: .5rem;
+                height: 60px;
+                display: inline-table;
+            }
+            .list-item::after {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                /* background-color: white; */
+                padding-left: 8px;
+            }
+            .list-item h3,
+            .list-item p {
+                margin: 0;
+                padding: 2px;
+                text-overflow: ellipsis;
+            }
+            /* Tooltip-related CSS */
+            .tooltip {
+                display: none;
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 14px;
+                z-index: 1;
+                top: 100%;
+                left: 0;
+                max-width: 600px;
+                /* white-space: nowrap; */
+            }
+            .list-item:hover .tooltip {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Search by Flutter & Dart API</h1>
+        <div id="stats"></div>
+        <div class="search-container">
+            <input type="text" id="input-field" placeholder="Search by Flutter API..." maxlength="60">
+            <span id="found-time"></span>
+        </div>
+        <div id="results" class="list-container">
+            <p>Results will appear here</p>
+        </div>
+        <script>
+            const inputField = document.getElementById('input-field');
+            const foundTime = document.getElementById('found-time');
+            inputField.addEventListener('input', fetchData);
+            // Event listener to allow only alphanumeric characters and spaces
+            inputField.addEventListener('keypress', (event) => {
+                const keyCode = event.which || event.keyCode;
+                const char = String.fromCharCode(keyCode);
+
+                if (!char.match(/^[A-Za-z0-9\s]$/)) {
+                    event.preventDefault();
+                }
+            });
+
+            let debounceTimeout;
+
+            async function fetchData() {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(async () => {
+                    const inputField = document.getElementById('input-field');
+                    const searchTerm = inputField.value.trim();
+                    if (searchTerm === '' || searchTerm.length < 3) {
+                        document.getElementById('results').innerHTML = '<p>Results will appear here</p>';
+                        return;
+                    }
+
+                    //const startTime = performance.now(); // Start measuring time
+                    const response = await fetch(`https://dartdocbot.plugfox.dev/search?q=${searchTerm}`);
+                    //const endTime = performance.now(); // End measuring time
+                    const data = await response.json();
+
+                    foundTime.textContent = `found in ${data["meta"]["took"]} ms`;
+                    //const elapsedTime = endTime - startTime;
+                    //foundTime.textContent = `found in ${elapsedTime.toFixed(2)} ms`;
+
+                    displayResults(data["data"]);
+                }, 500); // Adjust the debounce time as needed
+            }
+
+            function displayResults(data) {
+                //console.log(data);
+                const resultsContainer = document.getElementById('results');
+                resultsContainer.innerHTML = '';
+
+                if (data.length === 0) {
+                    resultsContainer.innerHTML = '<p>No results found</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const listItem = document.createElement('div');
+                    listItem.classList.add('list-item');
+
+                    const title = document.createElement('h3');
+                    title.textContent = item.name;
+                    listItem.appendChild(title);
+
+                    const subtitle = document.createElement('p');
+                    subtitle.innerHTML = `<i>${item.kind} in ${item.library}</i>`;
+                    listItem.appendChild(subtitle);
+
+                    // Add the tooltip
+                    if (item.description !== null) {
+                        const tooltip = document.createElement('span');
+                        tooltip.classList.add('tooltip');
+                        tooltip.textContent = `${item.description}`;
+                        listItem.appendChild(tooltip);
+                    }
+
+                    resultsContainer.appendChild(listItem);
+                });
+            }
+
+            async function fetchStats() {
+                const response = await fetch('https://dartdocbot.plugfox.dev/stat');
+                const data = await response.json();
+                return data;
+            }
+
+            function displayStats(stats) {
+                const statsContainer = document.getElementById('stats');
+                const table = document.createElement('table');
+                const keys = Object.keys(stats);
+                  keys.forEach((key) => {
+                    const row = document.createElement('tr');
+                    const labelCell = document.createElement('td');
+                    labelCell.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+                    row.appendChild(labelCell);
+                    const valueCell = document.createElement('td');
+                    switch (key) {
+                        case 'updated':
+                            valueCell.textContent = new Date(parseInt(stats[key]) * 1000);
+                            break;
+                        case 'size':
+                            valueCell.textContent = `${ (stats[key] / 1024 / 1024).toFixed(2) } Mb`;
+                            break;
+                        default:
+                            valueCell.textContent = stats[key];
+                            break;
+                    }
+                    row.appendChild(valueCell);
+                    table.appendChild(row);
+                });
+                statsContainer.innerHTML = '';
+                statsContainer.appendChild(table);
+            }
+            // Fetch and display stats
+            fetchStats()
+                .then((response) => {
+                    displayStats(response.data);
+                })
+                .catch((error) => {
+                    console.error('Error fetching stats:', error);
+                });
+        </script>
+    </body>
+</html>
