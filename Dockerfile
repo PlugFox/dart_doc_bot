@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY . .
 
+ARG PUB_CACHE="/var/tmp/.pub_cache"
 ENV FLUTTER_HOME="/opt/flutter"
 ENV PATH="$PATH:$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin"
 
