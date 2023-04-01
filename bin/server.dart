@@ -38,7 +38,7 @@ void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
         SendPort? sendPort;
         final server = SharedServer(
           httpAddress: io.InternetAddress.anyIPv4, // io.InternetAddress.loopbackIPv4
-          httpPort: 8080,
+          httpPort: httpPort,
           sendPort: receivePort.sendPort,
           label: 'Server#$i',
           database: await db.serializableConnection(),
