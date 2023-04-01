@@ -19,8 +19,8 @@ final String _$botToken = io.Platform.environment['TG_BOT_TOKEN'] ?? (throw Exce
 
 final Handler $router = Router(notFoundHandler: $notFound)
   ..get('/stat', $stat)
-  ..get('/search', $search)
   ..get('/health', $healthCheck)
+  ..get('/search', $search)
   ..post('/telegram', $telegram);
 
 Response $healthCheck(Request request) => Response.ok(

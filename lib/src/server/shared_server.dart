@@ -33,13 +33,15 @@ class SharedServer {
         errorsAreFatal: true,
       );
 
+  /// The entry point for the isolate.
   static void _endpoint(SharedServer args) => Future<void>(() async {
         fine('Starting isolate ${Isolate.current.debugName ?? 'unknown'}');
         final receivePort = ReceivePort();
         args.sendPort.send(receivePort.sendPort);
+        receivePort.listen((message) {/* ... */});
         final database = Database.connect(await args.database.connect());
         final searchService = SearchService(database: database);
-        final handler = Pipeline()
+        final pipeline = Pipeline()
             .addMiddleware(
               handleErrors(),
             )
@@ -58,7 +60,7 @@ class SharedServer {
             )
             .addHandler($router);
         final server = await shelf_io.serve(
-          handler,
+          pipeline,
           args.httpAddress,
           args.httpPort,
           poweredByHeader: 'Fox\'s Dart Doc Bot',

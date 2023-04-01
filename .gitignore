@@ -63,3 +63,6 @@ log.pana.json
 
 # Temporary files
 .temp/
+
+# Binaries
+*.exe
