@@ -1,0 +1,69 @@
+version: '3.9'
+
+services:
+  dartdocbot:
+    hostname: dartdocbot
+    image: plugfox/dart-doc-bot:0.0.1
+    networks:
+      - public
+    #ports:
+    #  - '8080:8080'
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - "TZ=UTC"
+      - "PORT=8080"
+     # - "TG_BOT_TOKEN=your.token" # Telegram bot token
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+      #resources:
+      #  limits:
+      #    cpus: '0.50'
+      #    memory: 256M
+      #  reservations:
+      #    cpus: '0.25'
+      #    memory: 128M
+      labels:
+        - org.label-schema.group=dartdocbot
+
+        ####################################################################
+        # Dart Doc Bot
+        ####################################################################
+        # Labels for traefik https://doc.traefik.io/traefik/providers/docker/
+        - "traefik.enable=true"
+        - "traefik.http.routers.dartdocbot.entrypoints=https"
+        - "traefik.http.routers.dartdocbot.rule=Host(`dartdocbot.plugfox.dev`)"
+        - "traefik.http.routers.dartdocbot.tls.certresolver=le"
+
+        # Port traefik needs to route traffic to
+        - "traefik.http.routers.dartdocbot.service=dartdocbot"
+        - "traefik.http.services.dartdocbot.loadbalancer.server.port=8080"
+
+        # Enable middleware
+        - "traefik.http.routers.dartdocbot.middlewares=dartdocbot-ratelimit@docker,dartdocbot-headers@docker"
+
+        # Middleware rate limit
+        - "traefik.http.middlewares.dartdocbot-ratelimit.ratelimit.average=1000"
+        - "traefik.http.middlewares.dartdocbot-ratelimit.ratelimit.burst=500"
+
+        # CORS
+        - "traefik.http.middlewares.dartdocbot-headers.headers.accesscontrolalloworiginlist=*"
+        - "traefik.http.middlewares.dartdocbot-headers.headers.accesscontrolallowmethods=GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS"
+        - "traefik.http.middlewares.dartdocbot-headers.headers.accesscontrolexposeheaders=*"
+        - "traefik.http.middlewares.dartdocbot-headers.headers.accesscontrolallowheaders=*"
+        - "traefik.http.middlewares.dartdocbot-headers.headers.accesscontrolmaxage=100"
+        - "traefik.http.middlewares.dartdocbot-headers.headers.accessControlAllowCredentials=true"
+        - "traefik.http.middlewares.dartdocbot-headers.headers.addvaryheader=true"
+
+networks:
+  # Overlay network for containers that need to be accessible over the internet
+  public:
+    external: true
+    attachable: true
+    driver: overlay

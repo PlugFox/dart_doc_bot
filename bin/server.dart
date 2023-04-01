@@ -8,6 +8,16 @@ import 'package:dart_doc_bot/src/server/logger.dart';
 import 'package:dart_doc_bot/src/server/shared_server.dart';
 import 'package:rxdart/rxdart.dart';
 
+// This code is used to create a server that can handle multiple requests
+// concurrently. It uses a shared port and is therefore more efficient
+// than using individual ports for each request.
+//
+// The server uses a database to store and retrieve data.
+//
+// The server can handle multiple requests concurrently, and can be
+// started on multiple machines to handle even more requests.
+//
+// curl http://localhost:8080/search?q=ListTile
 @pragma('vm:entry-point')
 void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
       fine('Starting server...');
