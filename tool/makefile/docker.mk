@@ -1,11 +1,9 @@
-.PHONY: build run deploy
+.PHONY: build run push deploy shell
 
 build:
-	@echo "Building docker image"
 	@docker build -t plugfox/dart-doc-bot:0.0.1 .
 
 run:
-	@echo "Running docker image"
 	@docker run -it -d --rm -p 8080:8080 --name dart-doc-bot plugfox/dart-doc-bot:0.0.1
 
 push: deploy
