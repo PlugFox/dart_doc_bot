@@ -2,6 +2,7 @@ import 'dart:io' as io;
 import 'dart:isolate';
 
 import 'package:dart_doc_bot/src/search/search_service.dart';
+import 'package:dart_doc_bot/src/server/middleware/cors.dart';
 import 'package:dart_doc_bot/src/server/middleware/injector.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -50,6 +51,7 @@ class SharedServer {
                 logger: (msg, isError) => isError ? warning(msg) : fine(msg),
               ),
             )
+            .addMiddleware(cors())
             .addMiddleware(
               injector(
                 <String, Object>{
