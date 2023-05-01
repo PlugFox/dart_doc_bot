@@ -36,3 +36,9 @@ analyzer:
     close_sinks: error
     valid_regexps: error
     always_require_non_null_named_parameters: error
+
+linter:
+  rules:
+    # Public packages
+    public_member_api_docs: false
+    lines_longer_than_80_chars: false
