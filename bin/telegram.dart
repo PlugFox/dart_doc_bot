@@ -30,7 +30,7 @@ Future<List<Map<String, Object?>>> getUpdates(int offset) async {
   final response = await http.get(Uri.parse('${apiUrl}${botToken}/getUpdates?offset=$offset'));
   const $empty = <Map<String, Object?>>[];
   if (response.statusCode != 200) return $empty;
-  var jsonResponse = jsonDecode(response.body);
+  var jsonResponse = jsonDecode(response.body) as Object?;
   if (jsonResponse is! Map<String, Object?>) return $empty;
   if (jsonResponse['ok'] != true) return $empty;
   final result = jsonResponse['result'];

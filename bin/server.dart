@@ -55,7 +55,7 @@ void main([List<String>? args]) => runZonedGuarded<Future<void>>(() async {
         );
         await server();
         receivePort.listen(
-          (message) {
+          (Object? message) {
             if (message is SendPort) sendPort = message;
           },
           cancelOnError: false,

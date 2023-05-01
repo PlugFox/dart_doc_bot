@@ -132,7 +132,7 @@ FutureOr<Response> $telegram(Request request) async {
   final body = await request.readAsString();
   final Map<String, Object?> data;
   try {
-    data = jsonDecode(body);
+    data = jsonDecode(body) as Map<String, Object?>;
   } on Object {
     throw BadRequestException(
       detail: 'Invalid JSON',

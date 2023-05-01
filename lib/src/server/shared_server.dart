@@ -39,7 +39,7 @@ class SharedServer {
         fine('Starting isolate ${Isolate.current.debugName ?? 'unknown'}');
         final receivePort = ReceivePort();
         args.sendPort.send(receivePort.sendPort);
-        receivePort.listen((message) {/* ... */});
+        receivePort.listen((Object? message) {/* ... */});
         final database = Database.connect(await args.database.connect());
         final searchService = SearchService(database: database);
         final pipeline = Pipeline()

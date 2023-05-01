@@ -69,7 +69,7 @@ void main(List<String> args) => runZonedGuarded<void>(() async {
             .where((dir) => dir.existsSync())
             .map<String>((dir) => dir.absolute.path)
             .toList(),
-      ).bufferCount(500).asyncMap<void>((chunk) => _write(db, chunk)).drain();
+      ).bufferCount(500).asyncMap<void>((chunk) => _write(db, chunk)).drain<void>();
       await db.customStatement('VACUUM;');
       // Add stat info:
       await _addStats(

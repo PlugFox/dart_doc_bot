@@ -9,7 +9,7 @@ import 'package:stack_trace/stack_trace.dart' as st;
 /// wrapped into one with the status code 500.
 Middleware handleErrors() => (Handler handler) =>
     (Request request) => Future.sync(() => handler(request)).then<Response>((Response response) => response).catchError(
-          (error, stackTrace) {
+          (Object error, StackTrace stackTrace) {
             final result = error is HttpException
                 ? error
                 : HttpException(
