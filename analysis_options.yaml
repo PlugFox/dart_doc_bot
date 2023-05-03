@@ -12,9 +12,11 @@ analyzer:
     # Assets
     - "assets/**"
 
-  strong-mode:
-    implicit-casts: false
-    implicit-dynamic: false
+  # Enable the following options to enable strong mode.
+  language:
+    strict-casts: true
+    strict-raw-types: true
+    strict-inference: true
 
   errors:
     # Info
