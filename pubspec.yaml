@@ -28,4 +28,4 @@ dev_dependencies:
   build_runner: ^2.3.3
   drift_dev: ^2.6.0
   lint: ^2.0.1
-  file: ^6.1.4
+  file: ^7.0.0
