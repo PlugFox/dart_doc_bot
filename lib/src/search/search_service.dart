@@ -14,25 +14,24 @@ class SearchService {
       .toLowerCase()
       .split(_$exp)
       .where((e) => e.length > 2)
-      .toList();
+      .toList(growable: false);
 
   /// Search by beginning of name.
-  /// [words] - should be at least 3 characters long,
-  /// sanitized and contain only letters and numbers.
-  ///
-  /// Returns list of entity ids.
-  Future<List<String>> searchByName(List<String> words, {int limit = 25}) =>
-      _database.customSelect(_$getSearchRequest$Words(words, limit)).get().then<List<String>>(
-            (r) => r.map<String>((e) => e.data['id']! as String).toList(),
-          );
+  /// Returns list of entitis.
+  Future<List<Map<String, Object?>>> searchByName(String query, {int limit = 25}) {
+    final words = sanitize(query);
+    if (words.isEmpty) return Future<List<Map<String, Object?>>>.value(<Map<String, Object?>>[]);
+    return _database.customSelect(_$getSearchRequest$Words(words, limit)).get().then<List<Map<String, Object?>>>(
+        (rows) => rows.map<Map<String, Object?>>((e) => e.data).toList(growable: false));
+  }
 
   /// Search by trigrams.
   /// [words] - should be at least 3 characters long,
   /// sanitized and contain only letters and numbers.
   ///
   /// Returns list of entity ids.
-  Future<List<String>> searchByTrigrams(List<String> words, {int limit = 25}) =>
-      _database.customSelect(_$getSearchRequest$Trigrams(words, limit)).get().then<List<String>>(
+  Future<List<String>> searchByTrigrams(String query, {int limit = 25}) =>
+      _database.customSelect(_$getSearchRequest$Trigrams(sanitize(query), limit)).get().then<List<String>>(
             (r) => r.map<String>((e) => e.data['id']! as String).toList(),
           );
 
@@ -73,15 +72,32 @@ _prefixes (token, len, value) AS (
     length(value)       AS len,
     value               AS value
   FROM _input
+),
+_ids (id, relevance) AS (
+  SELECT DISTINCT
+    p.entity_id        AS id,
+    1000 / (p.len - 2) AS relevance
+  FROM prefix AS p
+    INNER JOIN _prefixes AS t
+    ON t.token = p.token
+      AND t.len <= p.len
+      AND t.value = substr(p.name, 1, t.len)
 )
-SELECT DISTINCT
-  p.entity_id AS id
-FROM prefix AS p
-  INNER JOIN _prefixes AS t
-  ON t.token = p.token
-    AND t.len <= p.len
-    AND t.value = substr(p.name, 1, t.len)
-ORDER BY p.len ASC
+SELECT
+  e.id          AS id,
+  i.relevance   AS relevance,
+  e.library     AS library,
+  e.parent_id   AS parent_id,
+  e.name        AS name,
+  e.kind        AS kind,
+  e.description AS description,
+  e.path        AS path,
+  e.created_at  AS created_at,
+  e.updated_at  AS updated_at
+FROM entity AS e
+  INNER JOIN _ids AS i
+    ON e.id = i.id
+ORDER BY i.relevance DESC
 LIMIT $limit
 ''';
 
@@ -113,7 +129,7 @@ _prefixes (token, len, value) AS (
 _word_ids (id, relevance) AS (
   SELECT DISTINCT
     p.entity_id                 AS id,
-    1000 + (1000 / (p.len - 3)) AS relevance
+    1000 + (1000 / (p.len - 2)) AS relevance
   FROM prefix AS p
     INNER JOIN _prefixes AS t
     ON t.token = p.token

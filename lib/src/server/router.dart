@@ -86,7 +86,7 @@ Future<Response> $search(Request request) async {
   final stopwatch = Stopwatch()..start();
   final List<Map<String, Object?>> result;
   try {
-    result = await request.searchService.search(query, limit: 25);
+    result = await request.searchService.searchByName(query, limit: 25);
     fine('Search query: "$query" in ${stopwatch.elapsedMilliseconds} ms');
   } on Object {
     rethrow;
@@ -149,7 +149,7 @@ FutureOr<Response> $telegram(Request request) async {
   FutureOr<Map<String, Object?>?> inlineQuery(Map<String, Object?> data) async {
     final query = data['query']?.toString().trim();
     if (query == null || query.length < 3) return null;
-    final results = await request.searchService.search(query, limit: 25);
+    final results = await request.searchService.searchByName(query, limit: 25);
     if (results.isEmpty) return null;
     return <String, Object?>{
       'inline_query_id': data['id'],

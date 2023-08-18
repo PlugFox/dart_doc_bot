@@ -78,10 +78,10 @@ CREATE TABLE IF NOT EXISTS prefix (
     token TEXT NOT NULL CHECK(length(token) = 3),
 
     -- Unique identifier of the entity
-    entity_id TEXT NOT NULL,
+    entity_id TEXT NOT NULL CHECK(entity_id != ''),
 
     -- Name's length
-    len INTEGER NOT NULL,
+    len INTEGER NOT NULL CHECK(len >= 3),
 
     -- Name (3 or more chars, lowercased)
     name TEXT NOT NULL CHECK(length(name) >= 3),
